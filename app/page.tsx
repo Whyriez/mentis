@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles, ArrowRight, Zap, BarChart3, Map } from "lucide-react";
+import { Brain, Sparkles, ArrowRight, Zap, BarChart3, Map } from "lucide-react";
 import { MentisLogo } from "@/components/ui/mentis-logo";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -114,7 +114,7 @@ export default function Home() {
       <footer className="border-t border-border/60 py-8 text-center text-xs text-muted-foreground">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Brain className="h-4 w-4 text-primary" />
+            <MentisLogo size={20} className="rounded-md" />
             <span className="font-bold text-foreground">Mentis</span>
             <span>&copy; {new Date().getFullYear()} Mentis Platform.</span>
           </div>
