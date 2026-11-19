@@ -33,7 +33,22 @@ export class QuestionService {
       const { data, error } = await req;
 
       if (!error && data && data.length > 0) {
-        dbQuestions = data.map((q) => ({
+        const questionList = data as unknown as Array<{
+          id: string;
+          module_id?: string;
+          lesson_id?: string;
+          question: string;
+          options?: unknown;
+          answer?: string;
+          correct_answer?: string;
+          explanation?: string;
+          difficulty?: string;
+          estimated_seconds?: number;
+          category?: string;
+          source?: string;
+          created_at?: string;
+        }>;
+        dbQuestions = questionList.map((q) => ({
           id: q.id,
           moduleId: q.module_id || "a1b2c3d4-0000-0000-0000-000000000001",
           lessonId: q.lesson_id,

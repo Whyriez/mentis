@@ -16,18 +16,18 @@ const STORAGE_KEY = "mentis_lang_pref";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("id");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as Language | null;
       if (saved && (saved === "id" || saved === "en")) {
-        setLanguageState(saved);
+        requestAnimationFrame(() => {
+          setLanguageState(saved);
+        });
       }
     } catch {
       // Ignore localStorage errors in restricted environments
     }
-    setMounted(true);
   }, []);
 
   const setLanguage = (lang: Language) => {

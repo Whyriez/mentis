@@ -1,7 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export async function createClient() {
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://example.supabase.co";
@@ -31,4 +32,23 @@ export async function createClient() {
       },
     },
   });
-}
+});
+
+/**
+ * Request-scoped cached helper to fetch the current authenticated user.
+ * Calling this across layouts, pages, and services within a single render
+ * executes only once instead of triggering multiple sequential HTTP requests.
+ */
+export const getCurrentUser = cache(async () => {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user) return null;
+    return user;
+  } catch {
+    return null;
+  }
+});

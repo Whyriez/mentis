@@ -36,8 +36,17 @@ export function Header({
 }: HeaderProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const [userName, setUserName] = useState(initialUserName || "");
-  const [userEmail, setUserEmail] = useState(initialUserEmail || "");
+  const [clientData, setClientData] = useState<{
+    userName?: string;
+    userEmail?: string;
+    avatarUrl?: string;
+    streakDays?: number;
+  }>({});
+
+  const userName = initialUserName ?? clientData.userName ?? "";
+  const userEmail = initialUserEmail ?? clientData.userEmail ?? "";
+  const avatarUrl = initialAvatarUrl ?? clientData.avatarUrl ?? "";
+  const streakDays = initialStreakDays ?? clientData.streakDays ?? 0;
 
   const navItems = [
     { label: t.nav.dashboard, href: "/dashboard", icon: LayoutDashboard },
@@ -49,25 +58,15 @@ export function Header({
     { label: t.nav.roadmap, href: "/roadmap", icon: Map },
   ];
 
-  const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl || "");
-  const [streakDays, setStreakDays] = useState(initialStreakDays ?? 0);
-
   useEffect(() => {
-    if (initialUserName) setUserName(initialUserName);
-    if (initialUserEmail) setUserEmail(initialUserEmail);
-    if (initialAvatarUrl) setAvatarUrl(initialAvatarUrl);
-    if (initialStreakDays !== undefined) setStreakDays(initialStreakDays);
-  }, [initialUserName, initialUserEmail, initialAvatarUrl, initialStreakDays]);
-
-  useEffect(() => {
-    if (!initialUserEmail) {
+    // Only attempt client-side user retrieval if not provided by server context
+    if (initialUserEmail === undefined && initialUserName === undefined) {
       const supabase = createClient();
-      supabase.auth.getUser().then(async ({ data: { user } }) => {
+      supabase.auth.getUser().then(async (res) => {
+        const user = res.data?.user;
         if (user) {
-          setUserEmail(user.email || "");
           const fallbackName =
             user.user_metadata?.full_name || user.email?.split("@")[0] || "Learner";
-          setUserName(fallbackName);
 
           const { data: profile } = await supabase
             .from("profiles")
@@ -75,27 +74,16 @@ export function Header({
             .eq("user_id", user.id)
             .single();
 
-          if (profile?.full_name) setUserName(profile.full_name);
-          if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
-
-          // Check real attempts to ensure no phantom streak is displayed
-          const { data: attempts } = await supabase
-            .from("quiz_attempts")
-            .select("started_at, finished_at")
-            .eq("user_id", user.id);
-
-          if (!attempts || attempts.length === 0) {
-            setStreakDays(0);
-            if (profile?.current_streak && profile.current_streak > 0) {
-              await supabase.from("profiles").update({ current_streak: 0, longest_streak: 0 }).eq("user_id", user.id);
-            }
-          } else if (initialStreakDays === undefined && profile?.current_streak !== undefined) {
-            setStreakDays(profile.current_streak);
-          }
+          setClientData({
+            userEmail: user.email || "",
+            userName: profile?.full_name || fallbackName,
+            avatarUrl: profile?.avatar_url || "",
+            streakDays: profile?.current_streak ?? 0,
+          });
         }
       });
     }
-  }, [initialUserEmail, initialStreakDays]);
+  }, [initialUserEmail, initialUserName]);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
@@ -140,7 +128,7 @@ export function Header({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Streak Counter */}
           <div className="flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-xs shrink-0">
-            <Flame className="h-4 w-4 fill-amber-500 text-amber-500 animate-pulse" />
+            <Flame className="h-4 w-4 fill-amber-500 text-amber-500" />
             <span>{streakDays} <span className="hidden sm:inline">{t.nav.dayStreak}</span></span>
           </div>
 

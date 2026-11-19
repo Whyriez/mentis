@@ -1,19 +1,13 @@
 import React from "react";
 import { Header } from "@/components/layout/header";
-import { createClient } from "@/lib/supabase/server";
-import { GamificationService } from "@/features/gamification/services/gamification-service";
-
-const gamificationService = new GamificationService();
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   let userName = "";
   let userEmail = "";
@@ -23,9 +17,10 @@ export default async function DashboardLayout({
   if (user) {
     userEmail = user.email || "";
 
+    const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, current_streak")
       .eq("user_id", user.id)
       .single();
 
@@ -35,11 +30,7 @@ export default async function DashboardLayout({
       user.email?.split("@")[0] ||
       "Learner";
     avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || "";
-
-    const gamificationProfile = await gamificationService.getUserGamificationProfile(
-      user.id
-    );
-    streakDays = gamificationProfile.streak.currentStreak;
+    streakDays = profile?.current_streak || 0;
   }
 
   return (

@@ -33,6 +33,12 @@ export interface AIAnalyticsData {
 
 import { createClient } from "@/lib/supabase/client";
 
+interface AttemptSummaryRecord {
+  accuracy?: number | null;
+  total_questions?: number | null;
+  duration_seconds?: number | null;
+}
+
 export class AdminAnalyticsService {
   async getPlatformAnalytics(): Promise<PlatformAnalyticsData> {
     try {
@@ -43,7 +49,7 @@ export class AdminAnalyticsService {
       ]);
 
       const totalUsers = userCount || 1;
-      const attemptList = attempts || [];
+      const attemptList = (attempts || []) as unknown as AttemptSummaryRecord[];
       const totalAttemptsCount = attemptList.length;
 
       let totalScore = 0;

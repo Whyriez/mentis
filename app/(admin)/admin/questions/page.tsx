@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Filter, HelpCircle, Edit, Upload, Download, Inbox } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,16 +20,15 @@ export default function AdminQuestionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const fetchQuestions = () => {
-    setLoading(true);
+  const fetchQuestions = useCallback(() => {
     getQuestionsAction()
       .then(setQuestions)
       .finally(() => setLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [fetchQuestions]);
 
   const handleExportCSV = () => {
     const csvContent = questionService.exportToCSV(questions);

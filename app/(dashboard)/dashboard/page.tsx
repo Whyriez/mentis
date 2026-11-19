@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { Brain, Sparkles, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { ContinueLearningCard } from "@/features/dashboard/components/continue-learning-card";
 import { TodaysGoalCard } from "@/features/dashboard/components/todays-goal-card";
 import { CurrentStreakCard } from "@/features/dashboard/components/current-streak-card";
@@ -28,20 +28,23 @@ const roadmapService = new RoadmapService();
 const gamificationService = new GamificationService();
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id || "guest";
+  const supabase = await createClient();
 
-  const { data: profile } = userId !== "guest" 
-    ? await supabase.from("profiles").select("full_name, daily_goal_minutes").eq("user_id", userId).single()
-    : { data: null };
+  // Concurrently fetch profile and all dashboard services in parallel
+  const [profileResult, analytics, roadmapSummary, gamification] = await Promise.all([
+    userId !== "guest"
+      ? supabase.from("profiles").select("full_name, daily_goal_minutes").eq("user_id", userId).single()
+      : Promise.resolve({ data: null }),
+    analyticsService.getUserAnalytics(userId),
+    roadmapService.getUserRoadmap(userId),
+    gamificationService.getUserGamificationProfile(userId),
+  ]);
 
+  const profile = profileResult.data;
   const userName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Learner";
   const targetMinutes = profile?.daily_goal_minutes || 20;
-
-  const analytics = await analyticsService.getUserAnalytics(userId);
-  const roadmapSummary = await roadmapService.getUserRoadmap(userId);
-  const gamification = await gamificationService.getUserGamificationProfile(userId);
 
   const weakest = analytics.weaknesses[0];
   const strongest = analytics.strengths[0];

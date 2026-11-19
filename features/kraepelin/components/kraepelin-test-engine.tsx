@@ -55,9 +55,12 @@ export function KraepelinTestEngine({
   const columnScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const horizontalGridRef = useRef<HTMLDivElement | null>(null);
   const columnsRef = useRef(columns);
-  columnsRef.current = columns;
   const currentColIdxRef = useRef(currentColIdx);
-  currentColIdxRef.current = currentColIdx;
+
+  useEffect(() => {
+    columnsRef.current = columns;
+    currentColIdxRef.current = currentColIdx;
+  }, [columns, currentColIdx]);
   const isCompletedRef = useRef(false);
 
   const handleFinish = useCallback(() => {
@@ -500,12 +503,12 @@ export function KraepelinTestEngine({
 function KraepelinPairRow({
   pair,
   isActivePair,
-  isKraepelin,
+  isKraepelin: _isKraepelin,
   pairRef,
 }: {
   pair: KraepelinPair;
   isActivePair: boolean;
-  isKraepelin: boolean;
+  isKraepelin?: boolean;
   pairRef: React.RefObject<HTMLDivElement | null> | null;
 }) {
   const topNum = pair.num1;

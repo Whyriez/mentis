@@ -1,5 +1,5 @@
 import { AnalyticsRepository, RawAttemptRecord } from "../repositories/analytics-repository";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/server";
 import {
   UserAnalyticsSummary,
   ReadinessMetrics,
@@ -17,9 +17,11 @@ export class AnalyticsService {
   }
 
   async getUserAnalytics(userIdInput?: string): Promise<UserAnalyticsSummary> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id || userIdInput || "guest";
+    let userId = userIdInput;
+    if (!userId) {
+      const user = await getCurrentUser();
+      userId = user?.id || "guest";
+    }
 
     const attempts = await this.repository.getUserAttempts(userId);
     const progress = await this.repository.getUserProgress(userId);

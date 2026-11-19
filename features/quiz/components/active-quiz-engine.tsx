@@ -42,7 +42,7 @@ export function ActiveQuizEngine({
   inputMode = "mcq",
   onRestart,
 }: ActiveQuizEngineProps) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const isUntimed = secondsPerQuestion >= 9999;
   const [timeLeft, setTimeLeft] = useState(isUntimed ? 0 : secondsPerQuestion);
@@ -57,7 +57,6 @@ export function ActiveQuizEngine({
 
   useEffect(() => {
     startTimeRef.current = Date.now();
-    setTypedAnswer("");
     if (inputMode === "direct") {
       // Auto-focus input on next question
       const timer = setTimeout(() => {
@@ -87,6 +86,7 @@ export function ActiveQuizEngine({
 
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex((prev) => prev + 1);
+        setTypedAnswer("");
         setTimeLeft(isUntimed ? 0 : secondsPerQuestion);
         startTimeRef.current = Date.now();
       } else {

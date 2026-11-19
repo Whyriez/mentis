@@ -48,7 +48,16 @@ export class LessonService {
         return this.getFallbackLessons();
       }
 
-      return data.map((l) => ({
+      const lessonList = data as unknown as Array<{
+        id: string;
+        module_id?: string;
+        title: string;
+        content_md?: string;
+        estimated_minutes?: number;
+        order_index?: number;
+        created_at?: string;
+      }>;
+      return lessonList.map((l) => ({
         id: l.id,
         moduleId: l.module_id || "mod-multiplication",
         title: l.title,

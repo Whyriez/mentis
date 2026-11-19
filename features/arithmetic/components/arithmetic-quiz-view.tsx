@@ -62,7 +62,8 @@ export function ArithmeticQuizView({
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then((res) => {
+      const user = res.data?.user;
       if (user) setUserId(user.id);
     });
   }, []);

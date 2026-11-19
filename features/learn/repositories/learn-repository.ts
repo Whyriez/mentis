@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { cache } from "react";
 import { multiplicationModule } from "../data/multiplication-module";
 import { LessonData, ModuleData } from "../types";
 
@@ -110,58 +111,62 @@ export const defaultModulesCatalog: ModuleData[] = [
   },
 ];
 
-export class LearnRepository {
-  /**
-   * Fetch all active modules from Supabase table public.modules
-   */
-  async getModules(): Promise<ModuleData[]> {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("modules")
-        .select("*")
-        .order("order_index", { ascending: true });
+const fetchModulesCached = cache(async (): Promise<ModuleData[]> => {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("modules")
+      .select("*")
+      .order("order_index", { ascending: true });
 
-      if (error || !data || data.length === 0) {
-        return defaultModulesCatalog;
-      }
-
-      // Merge DB modules with default catalog details and lessons
-      return data.map((mod) => {
-        const catalogMatch = defaultModulesCatalog.find(
-          (c) => c.slug === mod.slug || c.title.toLowerCase().includes(mod.title.toLowerCase())
-        );
-
-        return {
-          id: mod.id,
-          title: mod.title,
-          slug: mod.slug,
-          description: mod.description || catalogMatch?.description || "Master psychometric skills.",
-          difficulty: (mod.difficulty as "Beginner" | "Intermediate" | "Advanced") || catalogMatch?.difficulty || "Beginner",
-          lessons: catalogMatch?.lessons || [
-            {
-              id: `db-lesson-${mod.id}-1`,
-              moduleId: mod.id,
-              moduleTitle: mod.title,
-              title: `${mod.title} Foundational Drill`,
-              description: `Core concepts and mental shortcuts for ${mod.title}.`,
-              difficulty: (mod.difficulty as any) || "Beginner",
-              estimatedMinutes: 5,
-              orderIndex: 1,
-              objectives: ["Master core concept", "Apply speed shortcut"],
-              sections: {
-                explanation: `Detailed lesson breakdown for ${mod.title}.`,
-                quickTips: [],
-                examples: [],
-                summary: [],
-              },
-            },
-          ],
-        };
-      });
-    } catch {
+    if (error || !data || data.length === 0) {
       return defaultModulesCatalog;
     }
+
+    // Merge DB modules with default catalog details and lessons
+    return data.map((mod) => {
+      const catalogMatch = defaultModulesCatalog.find(
+        (c) => c.slug === mod.slug || c.title.toLowerCase().includes(mod.title.toLowerCase())
+      );
+
+      return {
+        id: mod.id,
+        title: mod.title,
+        slug: mod.slug,
+        description: mod.description || catalogMatch?.description || "Master psychometric skills.",
+        difficulty: (mod.difficulty as "Beginner" | "Intermediate" | "Advanced") || catalogMatch?.difficulty || "Beginner",
+        lessons: catalogMatch?.lessons || [
+          {
+            id: `db-lesson-${mod.id}-1`,
+            moduleId: mod.id,
+            moduleTitle: mod.title,
+            title: `${mod.title} Foundational Drill`,
+            description: `Core concepts and mental shortcuts for ${mod.title}.`,
+            difficulty: (mod.difficulty as "Beginner" | "Intermediate" | "Advanced") || "Beginner",
+            estimatedMinutes: 5,
+            orderIndex: 1,
+            objectives: ["Master core concept", "Apply speed shortcut"],
+            sections: {
+              explanation: `Detailed lesson breakdown for ${mod.title}.`,
+              quickTips: [],
+              examples: [],
+              summary: [],
+            },
+          },
+        ],
+      };
+    });
+  } catch {
+    return defaultModulesCatalog;
+  }
+});
+
+export class LearnRepository {
+  /**
+   * Fetch all active modules from Supabase table public.modules (cached per request)
+   */
+  async getModules(): Promise<ModuleData[]> {
+    return fetchModulesCached();
   }
 
   /**

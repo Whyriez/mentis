@@ -6,8 +6,7 @@ import { DailyMissionWidget } from "@/features/roadmap/components/daily-mission-
 import { ReviewQueueWidget } from "@/features/roadmap/components/review-queue-widget";
 import { RoadmapTimelineView } from "@/features/roadmap/components/roadmap-timeline-view";
 import { EmptyState } from "@/components/ui/ui-states";
-
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Roadmap | Mentis",
@@ -17,8 +16,7 @@ export const metadata: Metadata = {
 const roadmapService = new RoadmapService();
 
 export default async function RoadmapPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id || "guest";
 
   const summary = await roadmapService.getUserRoadmap(userId);

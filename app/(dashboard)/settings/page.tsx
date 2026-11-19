@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { Settings } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { SettingsForm } from "./settings-form";
 
 export const metadata: Metadata = {
@@ -9,17 +9,15 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   let fullName = user?.user_metadata?.full_name || "";
-  let email = user?.email || "";
+  const email = user?.email || "";
   let dailyGoalMinutes = 20;
   let roadmapTargetMonths = 2;
 
   if (user) {
+    const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name, daily_goal_minutes, roadmap_target_months")

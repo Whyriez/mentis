@@ -3,6 +3,14 @@ import { createServerClient } from "@supabase/ssr";
 import { isAdminRole } from "./lib/auth/rbac";
 
 export async function middleware(request: NextRequest) {
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+
+  // Fast path: Immediately pass through all non-admin routes.
+  // This eliminates blocking remote Supabase network roundtrips on every page navigation.
+  if (!isAdminRoute) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -38,36 +46,30 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  // 1. Not authenticated -> Redirect to /login
+  if (!user) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
-  if (isAdminRoute) {
-    // 1. Not authenticated -> Redirect to /login
-    if (!user) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  // 2. Fetch role from profiles table
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", user.id)
+    .single();
 
-    // 2. Fetch role from profiles table
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
+  const userRole = profile?.role || "user";
 
-    const userRole = profile?.role || "user";
-
-    // 3. Authenticated but non-admin role -> Redirect to /forbidden (403)
-    if (!isAdminRole(userRole)) {
-      return NextResponse.redirect(new URL("/forbidden", request.url));
-    }
+  // 3. Authenticated but non-admin role -> Redirect to /forbidden (403)
+  if (!isAdminRole(userRole)) {
+    return NextResponse.redirect(new URL("/forbidden", request.url));
   }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/admin/:path*"],
 };

@@ -27,7 +27,17 @@ export class ModuleService {
         return this.getFallbackModules();
       }
 
-      return data.map((m) => ({
+      const moduleList = data as unknown as Array<{
+        id: string;
+        title: string;
+        slug: string;
+        description?: string;
+        difficulty?: string;
+        order_index?: number;
+        lessons?: Array<{ count?: number }>;
+        created_at?: string;
+      }>;
+      return moduleList.map((m) => ({
         id: m.id,
         title: m.title,
         slug: m.slug,
@@ -39,7 +49,7 @@ export class ModuleService {
         orderIndex: m.order_index || 1,
         status: "Published",
         isActive: true,
-        lessonsCount: Array.isArray(m.lessons) && m.lessons[0] ? m.lessons[0].count : 3,
+        lessonsCount: (Array.isArray(m.lessons) && m.lessons[0]?.count != null) ? m.lessons[0].count : 3,
         updatedAt: m.created_at ? new Date(m.created_at).toLocaleDateString() : "Today",
       }));
     } catch {

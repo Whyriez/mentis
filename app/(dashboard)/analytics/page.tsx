@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { BarChart3, TrendingUp, Clock, CheckCircle2, HelpCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/server";
 import { AnalyticsService } from "@/features/analytics/services/analytics-service";
 import { ReadinessScoreCard } from "@/features/analytics/components/readiness-score-card";
 import { TrendCharts } from "@/features/analytics/components/trend-charts";
@@ -16,8 +16,7 @@ export const metadata: Metadata = {
 const analyticsService = new AnalyticsService();
 
 export default async function AnalyticsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id || "guest";
 
   const analytics = await analyticsService.getUserAnalytics(userId);

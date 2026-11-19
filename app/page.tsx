@@ -37,7 +37,7 @@ export default function Home() {
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative overflow-hidden py-20 lg:py-28 px-4 sm:px-6 container mx-auto text-center">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10 transform-gpu" />
 
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-bold mb-6">
             <Sparkles className="h-4 w-4" />

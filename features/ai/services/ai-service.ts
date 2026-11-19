@@ -170,10 +170,16 @@ export class AIService {
             .limit(params.amount);
 
           if (data && data.length > 0) {
-            targetQuestions = data.map((q) => ({
+            type QuestionContextRow = {
+              id: string;
+              question: string;
+              options?: unknown;
+              answer?: string;
+            };
+            targetQuestions = (data as unknown as QuestionContextRow[]).map((q) => ({
               id: q.id,
               question: q.question,
-              options: Array.isArray(q.options) ? q.options : [],
+              options: Array.isArray(q.options) ? (q.options as string[]) : [],
               answer: q.answer,
             }));
           }

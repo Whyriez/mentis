@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/client";
 
 const auditService = new AuditService();
 
+interface ProfileDbRow {
+  id: string;
+  user_id?: string;
+  full_name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  total_xp?: number | null;
+  current_streak?: number | null;
+  last_active_at?: string | null;
+  created_at?: string | null;
+}
+
 export class UserService {
   async getUsers(query?: {
     search?: string;
@@ -24,7 +36,8 @@ export class UserService {
         return this.getFallbackUsers(query);
       }
 
-      let res: AdminUserItem[] = data.map((p) => {
+      const profileList = data as unknown as ProfileDbRow[];
+      let res: AdminUserItem[] = profileList.map((p) => {
         const xp = p.total_xp || 0;
         const level = Math.max(1, Math.floor(xp / 300) + 1);
         const streakDays = p.current_streak || 0;
