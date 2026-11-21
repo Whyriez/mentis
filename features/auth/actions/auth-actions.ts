@@ -25,32 +25,49 @@ export async function loginAction(
     };
   }
 
-  const supabase = await createClient();
-  const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const supabase = await createClient();
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error || !authData.user) {
+    if (error || !authData.user) {
+      return {
+        success: false,
+        error: error?.message || "Failed to log in",
+      };
+    }
+
+    // Fetch role for automatic RBAC redirection
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", authData.user.id)
+      .single();
+
+    const role = profile?.role || "user";
+
+    if (isAdminRole(role)) {
+      redirect("/admin/dashboard");
+    } else {
+      redirect("/dashboard");
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("fetch failed") || message.includes("ENOTFOUND")) {
+      return {
+        success: false,
+        error: "Gagal terhubung ke database Supabase (Project mungkin sedang di-pause di Supabase Dashboard atau URL salah).",
+      };
+    }
     return {
       success: false,
-      error: error?.message || "Failed to log in",
+      error: message || "Terjadi kesalahan saat masuk. Silakan coba lagi.",
     };
-  }
-
-  // Fetch role for automatic RBAC redirection
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", authData.user.id)
-    .single();
-
-  const role = profile?.role || "user";
-
-  if (isAdminRole(role)) {
-    redirect("/admin/dashboard");
-  } else {
-    redirect("/dashboard");
   }
 }
 
@@ -77,25 +94,42 @@ export async function registerAction(
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
       },
-    },
-  });
+    });
 
-  if (error) {
+    if (error) {
+      return {
+        success: false,
+        error: error.message || "Failed to register",
+      };
+    }
+
+    redirect("/dashboard");
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("fetch failed") || message.includes("ENOTFOUND")) {
+      return {
+        success: false,
+        error: "Gagal terhubung ke database Supabase (Project mungkin sedang di-pause di Supabase Dashboard atau URL salah).",
+      };
+    }
     return {
       success: false,
-      error: error.message || "Failed to register",
+      error: message || "Terjadi kesalahan saat pendaftaran. Silakan coba lagi.",
     };
   }
-
-  redirect("/dashboard");
 }
 
 export async function logoutAction(): Promise<void> {

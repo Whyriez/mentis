@@ -55,7 +55,12 @@ export function RegisterForm() {
         setSuccessMsg("Account created successfully! Redirecting...");
         return;
       }
-      setServerError("An unexpected error occurred. Please try again.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setServerError(
+        msg.includes("fetch failed")
+          ? "Gagal terhubung ke server Supabase. Pastikan project Supabase aktif (tidak paused) dan URL di .env.local benar."
+          : msg
+      );
       setIsSubmitting(false);
     }
   };
